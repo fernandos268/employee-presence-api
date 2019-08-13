@@ -16,8 +16,9 @@ export default {
          }
          const Users = await User
          .find({})
-         .populate('Overtime')
-         .populate('Leave')
+         .populate('createdOvertimes')
+         .exec()
+
          return {
             ok: true,
             errors: [],

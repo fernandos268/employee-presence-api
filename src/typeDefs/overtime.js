@@ -30,8 +30,6 @@ export default gql`
    input OvertimeInput {
       startDate: Date!
       endDate: Date!
-      startTime: String!
-      endTime: String!
       description: String
       approverId: ID!
       duration: String!

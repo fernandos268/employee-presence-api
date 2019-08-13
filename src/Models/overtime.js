@@ -1,16 +1,12 @@
 import mongoose , { Schema } from 'mongoose'
 
 const overtimeSchema = new Schema({
-  date: {
+  startDate: {
     type: Date,
     required: true
   },
-  startTime: {
-    type: String,
-    required: true
-  },
-  endTime: {
-    type: String,
+  endDate: {
+    type: Date,
     required: true
   },
   duration: {
