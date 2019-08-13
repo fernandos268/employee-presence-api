@@ -26,7 +26,6 @@ export default {
       },
       overtimes: async (parent, args, { req }) => {
          try {
-            console.log(req.isAuth);
             if (!req.isAuth) {
                return AuthErrorResponse();
             }
@@ -50,9 +49,13 @@ export default {
       }
    },
    Mutation: {
-      createOvertime: async (parent, args, { req }) => {
+      createOvertime: async (parent, { input }, { req }) => {
          try {
-            const createdBy = User.findById(req.userId)
+            const createdBy = await User.findById(req.userId)
+            const approver = await User.findById(input.approverId)
+
+
+
          } catch (e) {
             return {
                ok: false,
