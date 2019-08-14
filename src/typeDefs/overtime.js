@@ -22,6 +22,7 @@ export default gql`
       endTime: String!
       description: String!
       createdBy: User!
+      updatedBy: User
       approver: User!
       status: String!
       remarks: String

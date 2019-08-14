@@ -30,10 +30,12 @@ export default {
                return AuthErrorResponse()
             }
 
+            // const overtimes = await Overtime.find({})
+            //    .populate('createdBy')
+            //    .populate('approver')
+            //    .exec()
+
             const overtimes = await Overtime.find({})
-               .populate('createdBy')
-               .populate('approver')
-               .exec()
 
             return {
                ok: true,
@@ -108,8 +110,27 @@ export default {
             }
          }
       },
-      updateOvertime: async (parent, args, { req }) => {
+      updateOvertime: async (parent, {id ,input }, { req }) => {
          try {
+            if (!req.isAuth) {
+               return AuthErrorResponse()
+            }
+
+            const overtime = await Overtime.findOneAndUpdate(id, {
+               startDate: moment(input.startDate),
+               endDate: moment(input.endDate),
+               duration,
+               description: input.description,
+               updatedBy: req.userId,
+               approver: input.approverId,
+            })
+
+            return {
+               ok: true,
+               errors: [],
+               overtime: overtime
+            }
+
          } catch (e) {
             return {
                ok: false,
@@ -138,5 +159,16 @@ export default {
             }
          }
       }
+   },
+   Overtime: {
+      createdBy: async (overtime, args, context, info) => {
+         return User.findById(overtime.createdBy)
+      },
+      updatedBy: async (overtime, args, context, info) => {
+         return User.findById(overtime.updatedBy)
+      },
+      approver: async (overtime, args, context, info) => {
+         return User.findById(overtime.approver)
+      },
    }
 }

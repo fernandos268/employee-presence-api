@@ -21,6 +21,10 @@ const overtimeSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "User"
   },
+  updatedBy: {
+    type: Schema.Types.ObjectId,
+    ref: "User"
+  },
   approver: {
     type: Schema.Types.ObjectId,
     ref: "User"

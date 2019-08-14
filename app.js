@@ -4,6 +4,7 @@ import session from 'express-session'
 import connectRedis from 'connect-redis'
 import { ApolloServer } from 'apollo-server-express'
 import cors from 'cors'
+import depthLimit from 'graphql-depth-limit'
 import typeDefs from './src/typeDefs'
 import resolvers from './src/resolvers'
 import reqAuth from './src/Middlewares/reqAuth'
@@ -64,6 +65,7 @@ import {
       const server = new ApolloServer({
          typeDefs,
          resolvers,
+         validationRules: [depthLimit(7)],
          playground: IN_PROD ? false : {
             settings: {
                'request.credentials': 'include'

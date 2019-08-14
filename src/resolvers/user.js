@@ -14,10 +14,8 @@ export default {
          if (!req.isAuth) {
             return AuthErrorResponse();
          }
-         const Users = await User
-         .find({})
-         .populate('createdOvertimes')
-         .exec()
+
+         const Users = await User.find({})
 
          return {
             ok: true,
@@ -87,6 +85,11 @@ export default {
                errors: [{ path: e.path, message: e.message }]
             }
          }
+      }
+   },
+   User: {
+      createdOvertimes: async (user, args, {req}, info) => {
+         return (await user.populate('createdOvertimes').execPopulate()).createdOvertimes
       }
    }
 }
