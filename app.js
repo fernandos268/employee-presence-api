@@ -25,6 +25,7 @@ import {
    REDIS_PASSWORD
 } from './config'
 
+import { schemaDirectives } from './src/directives/authDirective';
 
 (async () => {
    try {
@@ -65,6 +66,7 @@ import {
       const server = new ApolloServer({
          typeDefs,
          resolvers,
+         schemaDirectives,
          validationRules: [depthLimit(7)],
          playground: IN_PROD ? false : {
             settings: {

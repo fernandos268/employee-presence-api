@@ -11,9 +11,9 @@ export default {
          return await User.findById(req.session.userId)
       },
       users: async (parent, args, { req }, info) => {
-         if (!req.isAuth) {
-            return AuthErrorResponse();
-         }
+         // if (!req.isAuth) {
+         //    return AuthErrorResponse();
+         // }
 
          const Users = await User.find({})
 
