@@ -14,12 +14,19 @@ export default gql`
       overtimeApproval(input: ApprovalInput!): OvertimeResponse!
    }
 
-   type Overtime {
-      id: ID!
+
+   type OTDuration {
       startDate: Date!
       endDate: Date!
       startTime: String!
-      endTime: String!
+      endTime: String
+      total_unit: String!
+      total_value: Float!
+   }
+
+   type Overtime {
+      id: ID!
+      ot_duration: OTDuration!
       description: String!
       createdBy: User!
       updatedBy: User
@@ -31,9 +38,11 @@ export default gql`
    input OvertimeInput {
       startDate: Date!
       endDate: Date!
+      startTime: String!
+      endTime: String!
       description: String
       approverId: ID!
-      duration: String!
+      ot_duration: String!
    }
 
    type OvertimeResponse {

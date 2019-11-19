@@ -57,18 +57,33 @@ export default {
             const createdBy = await User.findById(req.userId)
             const approver = await User.findById(input.approverId)
 
-            const duration = moment
-               .utc(moment(input.startDate, "DD/MM/YYYY HH:mm:ss")
-                  .diff(moment(input.endDate, "DD/MM/YYYY HH:mm:ss")))
+            const {
+               startDate,
+               endDate,
+               startTime,
+               endTime,
+               description,
+               approverId,
+            } = input
+
+            const total_value = moment
+               .utc(moment(startDate, "DD/MM/YYYY HH:mm:ss")
+                  .diff(moment(endDate, "DD/MM/YYYY HH:mm:ss")))
                .format("HH:mm:ss")
 
+            const ot_duration = {
+               startDate: moment(startDate),
+               endDate: moment(endDate),
+               startTime,
+               endTime,
+               total_value
+            }
+
             const overtime = new Overtime({
-               startDate: moment(input.startDate),
-               endDate: moment(input.endDate),
-               duration,
-               description: input.description,
+               ot_duration,
+               description,
                createdBy: req.userId,
-               approver: input.approverId,
+               approver: approverId,
                status: "Pending"
             })
 
