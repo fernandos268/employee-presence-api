@@ -8,8 +8,9 @@ import depthLimit from 'graphql-depth-limit'
 import typeDefs from './src/typeDefs'
 import resolvers from './src/resolvers'
 import reqAuth from './src/Middlewares/reqAuth'
-import http from 'http';
-
+import { createServer } from 'http'
+import { execute, subscribe } from 'graphql'
+import { SubscriptionServer } from 'subscriptions-transport-ws'
 
 import {
    APP_PORT,
@@ -29,15 +30,15 @@ import {
          { useNewUrlParser: true }
       )
 
-      const pubsub = new PubSub()
+      mongoose.set('useFindAndModify', false)
 
       const app = express()
 
       app.disable('x-powered-by')
 
-      app.use(reqAuth)
+      // app.use(reqAuth)
 
-      const server = new ApolloServer({
+      const apolloServer = new ApolloServer({
          cors: {
             origin: "*",
             methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
@@ -49,22 +50,28 @@ import {
          resolvers,
          validationRules: [depthLimit(6)],
          playground: IN_PROD ? false : {
+            subscriptionsEndpoint: `ws://localhost:${APP_PORT}/subscriptions`,
             settings: {
                'request.credentials': 'include'
             }
          },
+         subscriptions: {
+            onConnect: async (connectionParams) => {
+               console.log('SUBSCRIPTIONS: onConnect()')
+            }
+         }
          // context: ({ req, res }) => ({ req, res })
       })
 
-      server.applyMiddleware({ app })
+      apolloServer.applyMiddleware({ app })
 
-      const httpServer = http.createServer(app);
-      server.installSubscriptionHandlers(httpServer);
+      const server = createServer(app);
+      apolloServer.installSubscriptionHandlers(server);
 
-      httpServer.listen({ port: APP_PORT }, () => {
-         console.log(`🚀 Server ready at http://localhost:${APP_PORT}${server.graphqlPath}`);
-         console.log(`🚀 Subscriptions ready at ws://localhost:${APP_PORT}${server.subscriptionsPath}`);
-      });
+      server.listen({ port: APP_PORT }, () => {
+         console.log(`🚀 Server ready at http://10.111.2.243:${APP_PORT}${apolloServer.graphqlPath}`);
+         console.log(`🚀 Subscriptions ready at ws://10.111.2.243:${APP_PORT}${apolloServer.subscriptionsPath}`);
+      })
 
 
       // app.listen(

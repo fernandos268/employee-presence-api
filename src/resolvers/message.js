@@ -2,17 +2,19 @@ import { Message } from "../Models"
 import { PubSub, withFilter } from 'apollo-server';
 require('dotenv').config();
 
-const MESSAGE_CREATED = 'MESSAGE_CREATED';
-const MESSAGE_UPDATED = 'MESSAGE_UPDATED';
+const MESSAGE_CREATED = 'MESSAGE_CREATED'
+const MESSAGE_UPDATED = 'MESSAGE_UPDATED'
+const FETCHED_ALL_MESSAGES = 'FETCHED_ALL_MESSAGES'
 
 const pubsub = new PubSub();
-
-
 
 export default {
     Query: {
         allMessages: async () => {
-            return await Message.find({})
+            console.log('QUERY: allMessages')
+            const messages = await Message.find({})
+            await pubsub.publish(FETCHED_ALL_MESSAGES, { allMessages: messages })
+            return messages
         },
         fetchMessage: async (parent, { id }) => {
             return await Message.findById(id)
@@ -20,6 +22,7 @@ export default {
     },
     Mutation: {
         createMessage: async (_, { text }) => {
+            console.log('createMessage', text)
             const message = new Message({
                 text,
                 isFavorite: false
@@ -29,14 +32,21 @@ export default {
             return await message.save()
         },
         updateMessage: async (parent, { id, text, isFavorite }) => {
-            const message = await Message.findByIdAndUpdate(id, {
-                text,
-                isFavorite
-            })
+            try {
+                const message = await Message.findByIdAndUpdate(
+                    id,
+                    {
+                        text,
+                        isFavorite
+                    },
+                    { new: true })
 
-            await pubsub.publish(MESSAGE_UPDATED, { messageUpdated: message })
+                await pubsub.publish(MESSAGE_UPDATED, { messageUpdated: message })
 
-            return message
+                return message
+            } catch (error) {
+                throw console.error();
+            }
         },
     },
     Subscription: {
