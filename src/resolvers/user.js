@@ -24,9 +24,9 @@ export default {
          }
       },
       user: async (parent, args, { req }, info) => {
-         if (!req.isAuth) {
-            return AuthErrorResponse();
-         }
+         // if (!req.isAuth) {
+         //    return AuthErrorResponse();
+         // }
          const user = await User.findById(args.id)
          return {
             ok: true,

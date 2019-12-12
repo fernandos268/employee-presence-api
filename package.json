@@ -7,6 +7,7 @@
     "dev": "nodemon  -r esm app.js"
   },
   "dependencies": {
+    "apollo-server": "^2.9.13",
     "apollo-server-express": "^2.6.9",
     "bcryptjs": "^2.4.3",
     "connect-redis": "^3.4.2",
@@ -17,10 +18,12 @@
     "express-session": "^1.16.2",
     "graphql": "^14.4.2",
     "graphql-depth-limit": "^1.1.0",
+    "graphql-subscriptions": "^1.1.0",
     "joi": "^14.3.1",
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.24.0",
-    "mongoose": "^5.6.5"
+    "mongoose": "^5.6.5",
+    "subscriptions-transport-ws": "^0.9.16"
   },
   "devDependencies": {
     "nodemon": "^1.19.1"

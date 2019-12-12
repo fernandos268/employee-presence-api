@@ -2,12 +2,14 @@ import mongoose from 'mongoose'
 import express from 'express'
 import session from 'express-session'
 import connectRedis from 'connect-redis'
-import { ApolloServer } from 'apollo-server-express'
+import { ApolloServer, PubSub } from 'apollo-server-express'
 import cors from 'cors'
 import depthLimit from 'graphql-depth-limit'
 import typeDefs from './src/typeDefs'
 import resolvers from './src/resolvers'
 import reqAuth from './src/Middlewares/reqAuth'
+import http from 'http';
+
 
 import {
    APP_PORT,
@@ -16,13 +18,7 @@ import {
    DB_PORT,
    DB_NAME,
    DB_HOST,
-   IN_PROD,
-   SESS_NAME,
-   SESS_SECRET,
-   SESS_LIFETIME,
-   REDIS_HOST,
-   REDIS_PORT,
-   REDIS_PASSWORD
+   IN_PROD
 } from './config'
 
 
@@ -33,54 +29,52 @@ import {
          { useNewUrlParser: true }
       )
 
+      const pubsub = new PubSub()
+
       const app = express()
 
       app.disable('x-powered-by')
 
       app.use(reqAuth)
 
-      // const RedisStore = connectRedis(session)
-
-      // const store = new RedisStore({
-      //    host: REDIS_HOST,
-      //    port: REDIS_PORT,
-      //    pass: REDIS_PASSWORD
-      // })
-
-      // app.use(session({
-      //    store,
-      //    name: SESS_NAME,
-      //    secret: SESS_SECRET,
-      //    resave: true,
-      //    rolling: true,
-      //    saveUninitialized: false,
-      //    cookie: {
-      //       maxAge: parseInt(SESS_LIFETIME),
-      //       sameSite: true,
-      //       secure: IN_PROD
-      //    }
-      //    }))
-
-
       const server = new ApolloServer({
+         cors: {
+            origin: "*",
+            methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+            preflightContinue: false,
+            optionsSuccessStatus: 204,
+            credentials: true
+         },
          typeDefs,
          resolvers,
-         validationRules: [depthLimit(7)],
+         validationRules: [depthLimit(6)],
          playground: IN_PROD ? false : {
             settings: {
                'request.credentials': 'include'
             }
          },
-         context: ({ req, res }) => ({ req, res })
+         // context: ({ req, res }) => ({ req, res })
       })
 
-      server.applyMiddleware({ app, cors: false })
+      server.applyMiddleware({ app })
 
-      app.listen({ port: APP_PORT }, () =>
-         console.log(`http://localhost:${APP_PORT}${server.graphqlPath}`)
-      )
+      const httpServer = http.createServer(app);
+      server.installSubscriptionHandlers(httpServer);
+
+      httpServer.listen({ port: APP_PORT }, () => {
+         console.log(`🚀 Server ready at http://localhost:${APP_PORT}${server.graphqlPath}`);
+         console.log(`🚀 Subscriptions ready at ws://localhost:${APP_PORT}${server.subscriptionsPath}`);
+      });
+
+
+      // app.listen(
+      //    {
+      //       port: APP_PORT
+      //    },
+      //    () => console.log(`http://localhost:${APP_PORT}${server.graphqlPath}`)
+      // )
    }
-   catch(e) {
+   catch (e) {
       console.log(e);
    }
 })()

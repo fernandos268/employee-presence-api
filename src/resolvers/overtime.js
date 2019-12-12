@@ -26,9 +26,9 @@ export default {
       },
       overtimes: async (parent, args, { req }) => {
          try {
-            if (!req.isAuth) {
-               return AuthErrorResponse()
-            }
+            // if (!req.isAuth) {
+            //    return AuthErrorResponse()
+            // }
 
             // const overtimes = await Overtime.find({})
             //    .populate('createdBy')
