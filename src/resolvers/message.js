@@ -21,7 +21,7 @@ export default {
         }
     },
     Mutation: {
-        createMessage: async (_, { text }) => {
+        createMessage: async (parent, { text }) => {
             console.log('createMessage', text)
             const message = new Message({
                 text,

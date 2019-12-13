@@ -40,8 +40,8 @@ import {
 
       const apolloServer = new ApolloServer({
          cors: {
-            origin: "*",
-            methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+            origin:'*',
+            methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
             preflightContinue: false,
             optionsSuccessStatus: 204,
             credentials: true
@@ -50,7 +50,7 @@ import {
          resolvers,
          validationRules: [depthLimit(6)],
          playground: IN_PROD ? false : {
-            subscriptionsEndpoint: `ws://localhost:${APP_PORT}/subscriptions`,
+            subscriptionsEndpoint: `ws://localhost:${APP_PORT}/graphql`,
             settings: {
                'request.credentials': 'include'
             }
@@ -73,13 +73,6 @@ import {
          console.log(`🚀 Subscriptions ready at ws://10.111.2.243:${APP_PORT}${apolloServer.subscriptionsPath}`);
       })
 
-
-      // app.listen(
-      //    {
-      //       port: APP_PORT
-      //    },
-      //    () => console.log(`http://localhost:${APP_PORT}${server.graphqlPath}`)
-      // )
    }
    catch (e) {
       console.log(e);

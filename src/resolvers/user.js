@@ -37,8 +37,8 @@ export default {
    },
    Mutation: {
       signin: async (parent, { email, password }, { req }, info) => {
-         const requestedUser = await signinAttempt(email, password )
-         return requestedUser
+         const result = await signinAttempt(email, password )
+         return result
       },
       signup: async (parent, { input }, { req }, info) => {
          try {
