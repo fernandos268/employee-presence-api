@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "nodemon -r e sm app.js"
+    "dev": "nodemon -r esm app.js"
   },
   "dependencies": {
     "apollo-server": "^2.9.13",
