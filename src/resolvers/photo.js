@@ -1,6 +1,10 @@
 import { Photo } from "../Models"
 import path from 'path'
 import fs from 'fs'
+import uuidV4 from 'uuid/v4'
+import { createWriteStream, existsSync, mkdirSync } from 'fs'
+
+const files = []
 
 export default {
     Query: {
@@ -8,24 +12,24 @@ export default {
     },
     Mutation: {
         addPhoto: async (parent, { file, description }) => {
-            const { stream, filename, mimetype } = await file
-            console.log({ stream, filename, mimetype, description })
-            const file_name = path.basename(filename)
-            const filepath = path.join('./uploads', file_name)
-            const ws = fs.createWriteStream(filepath)
-            stream.pipe(ws)
+            const { createReadStream, filename } = await file;
 
-            const photo = new Photo({
-                fileName: filename,
-                fileLocation: filepath,
+            await new Promise(res =>
+                createReadStream()
+                    .pipe(createWriteStream(path.join(__dirname, "../../uploads", filename)))
+                    .on("close", res)
+            )
+
+            const fileInfo = {
+                id: uuidV4(),
+                fileName,
+                fileLocation: path.join(__dirname, "./uploads", filename),
                 description
-            })
+            }
 
-            const result = await photo.save()
+            files.push(fileInfo)
 
-            stream.on('end', () => {
-                return result
-            })
+            return fileInfo
         }
     }
     // singleUpload: (parent, args) => {

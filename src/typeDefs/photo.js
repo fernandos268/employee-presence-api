@@ -6,7 +6,7 @@ export default gql`
     }
 
     extend type Mutation {
-        addPhoto(file: Upload!, description: String): Photo!
+        addPhoto(file: Upload!, description: String): Photo
 
     }
 

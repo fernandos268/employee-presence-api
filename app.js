@@ -2,15 +2,15 @@ import mongoose from 'mongoose'
 import express from 'express'
 import session from 'express-session'
 import connectRedis from 'connect-redis'
-import { ApolloServer, PubSub } from 'apollo-server-express'
-import cors from 'cors'
+import { ApolloServer } from 'apollo-server-express'
 import depthLimit from 'graphql-depth-limit'
 import typeDefs from './src/typeDefs'
 import resolvers from './src/resolvers'
 import reqAuth from './src/Middlewares/reqAuth'
 import { createServer } from 'http'
-import { execute, subscribe } from 'graphql'
-import { SubscriptionServer } from 'subscriptions-transport-ws'
+
+import socketIO from 'socket.io'
+import socketIOStream from 'socket.io-stream'
 
 import {
    APP_PORT,
@@ -21,7 +21,6 @@ import {
    DB_HOST,
    IN_PROD
 } from './config'
-
 
 (async () => {
    try {
@@ -39,15 +38,15 @@ import {
       // app.use(reqAuth)
 
       const apolloServer = new ApolloServer({
+         typeDefs,
+         resolvers,
          cors: {
-            origin:'*',
+            origin: '*',
             methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
             preflightContinue: false,
             optionsSuccessStatus: 204,
             credentials: true
          },
-         typeDefs,
-         resolvers,
          validationRules: [depthLimit(6)],
          playground: IN_PROD ? false : {
             subscriptionsEndpoint: `ws://localhost:${APP_PORT}/graphql`,
@@ -56,11 +55,20 @@ import {
             }
          },
          subscriptions: {
-            onConnect: async (connectionParams) => {
-               console.log('SUBSCRIPTIONS: onConnect()')
+            onConnect: (connectionParams, webSocket, context) => {
+               if (connectionParams && connectionParams.auth) {
+                  console.log('authorization', connectionParams.auth)
+               }
             }
-         }
-         // context: ({ req, res }) => ({ req, res })
+         },
+         context: ({ connection, payload, req }) => {
+            // whatever you return here can be accessed from the middleware of the SubscriptionMiddleware with
+            // applyMiddleware: (options, next) => options.getContext()
+            if (payload && payload.auth) {
+               console.log('authorization', payload.auth)
+               return { authorization: payload.auth };
+            }
+         },
       })
 
       apolloServer.applyMiddleware({ app })

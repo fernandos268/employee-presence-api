@@ -21,8 +21,8 @@ export default {
         }
     },
     Mutation: {
-        createMessage: async (parent, { text }) => {
-            console.log('createMessage', text)
+        createMessage: async (parent, { text }, context) => {
+            console.log('Resolver --> context', context)
             const message = new Message({
                 text,
                 isFavorite: false
