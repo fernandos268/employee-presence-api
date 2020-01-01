@@ -11,9 +11,9 @@ export default {
 
     },
     Mutation: {
-        addPhoto: async (parent, { file, description }) => {
+        addPhoto: async (parent, { file, description }, context) => {
+            console.log("TCL: context", context)
             const { createReadStream, filename } = await file;
-
             await new Promise(res =>
                 createReadStream()
                     .pipe(createWriteStream(path.join(__dirname, "../../uploads", filename)))

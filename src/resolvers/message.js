@@ -21,8 +21,11 @@ export default {
         }
     },
     Mutation: {
-        createMessage: async (parent, { text }, context) => {
-            console.log('Resolver --> context', context)
+        createMessage: async (parent, { text }, { connection }) => {
+            console.log('connection', connection)
+            if (!connection.context.req.session.userId) {
+                throw new Error("not authed");
+            }
             const message = new Message({
                 text,
                 isFavorite: false
