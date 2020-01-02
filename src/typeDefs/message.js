@@ -7,9 +7,7 @@ export default gql`
      }
 
      extend type Mutation {
-          createMessage (
-               text: String!
-          ): Message
+          createMessage (input: CreateMessageInput!): Message
           updateMessage (
                id: ID!
                text: String!
@@ -26,5 +24,9 @@ export default gql`
           id: ID!,
           text: String!,
           isFavorite: Boolean!
+     }
+
+     input CreateMessageInput {
+          text: String!
      }
 `
