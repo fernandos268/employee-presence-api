@@ -10,8 +10,8 @@ const pubsub = new PubSub();
 
 export default {
     Query: {
-        allMessages: async () => {
-            console.log('QUERY: allMessages')
+        allMessages: async (parent, args, { req }) => {
+            console.log('QUERY: allMessages --> req', req)
             const messages = await Message.find({})
             await pubsub.publish(FETCHED_ALL_MESSAGES, { allMessages: messages })
             return messages
@@ -21,17 +21,18 @@ export default {
         }
     },
     Mutation: {
-        createMessage: async (parent, { text }, { connection }) => {
+        createMessage: async (parent, { input }, { connection }) => {
             console.log('connection', connection)
+            const { text } = input
             if (!connection.context.req.session.userId) {
-                throw new Error("not authed");
+                throw new Error("Signin is required");
             }
             const message = new Message({
                 text,
                 isFavorite: false
             })
 
-            await pubsub.publish(MESSAGE_CREATED, { messageCreated: message })
+            await pubsub.publish(MESSAGE_CREATED, { message })
             return await message.save()
         },
         updateMessage: async (parent, { id, text, isFavorite }) => {
@@ -44,13 +45,13 @@ export default {
                     },
                     { new: true })
 
-                await pubsub.publish(MESSAGE_UPDATED, { messageUpdated: message })
+                await pubsub.publish(MESSAGE_UPDATED, { message })
 
                 return message
             } catch (error) {
                 throw console.error();
             }
-        },
+        }
     },
     Subscription: {
         messageCreated: {

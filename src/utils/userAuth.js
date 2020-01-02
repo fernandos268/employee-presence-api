@@ -3,56 +3,74 @@ import jwt from "jsonwebtoken";
 
 import { User } from "../Models";
 
-export const signinAttempt = async (email, password) => {
+export const signinAttempt = async params => {
+   const {
+      email,
+      password,
+      req
+   } = params
+
+   console.log('signinAttempt --> req ---> ', req)
+
    try {
-      const requestedUser = await User.findOne({ email });
-      if (!requestedUser) {
-         return {
-            ok: false,
-            errors: [
-               {
-                  path: "signinCredentials",
-                  message: "User does not exist!"
-               }
-            ]
-         };
+      const user = await User.findOne({ email });
+      // if (!user) {
+      //    return {
+      //       ok: false,
+      //       errors: [
+      //          {
+      //             path: "signinCredentials",
+      //             message: "User does not exist!"
+      //          }
+      //       ]
+      //    };
+      // }
+
+      if (!user) {
+         throw new Error('User does not exist')
       }
 
-      const isPasswordMatch = await bcrypt.compare(
+      const isValid = await bcrypt.compare(
          password,
-         requestedUser.password
-      );
-      if (!isPasswordMatch) {
-         return {
-            ok: false,
-            errors: [
-               {
-                  path: "signinCredentials",
-                  message: "Password is incorrect!"
-               }
-            ]
-         };
+         user.password
+      )
+
+      if (!isValid) {
+         // return {
+         //    ok: false,
+         //    errors: [
+         //       {
+         //          path: "signinCredentials",
+         //          message: "Password is incorrect!"
+         //       }
+         //    ]
+         // };
+         throw new Error('Email or Password does not match')
       }
 
-      const token = jwt.sign(
-         {
-            userId: requestedUser.id,
-            email: requestedUser.email,
-            username: requestedUser.username
-         },
-         "myveryawesomesecretkey",
-         {
-            expiresIn: "1h"
-         }
-      );
+      // const token = jwt.sign(
+      //    {
+      //       userId: user.id,
+      //       email: user.email,
+      //       username: user.username
+      //    },
+      //    "myveryawesomesecretkey",
+      //    {
+      //       expiresIn: "1h"
+      //    }
+      // );
 
-      return {
-         token,
-         ok: true,
-         errors: [],
-         user: requestedUser,
-         tokenExpiration: 1
-      };
+      // return {
+      //    token,
+      //    ok: true,
+      //    errors: [],
+      //    user,
+      //    tokenExpiration: 1
+      // };
+
+      req.session.userId =  user.id
+
+      return user
    } catch (e) {
       throw new Error(e);
    }

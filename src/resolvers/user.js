@@ -7,7 +7,7 @@ import { signinAttempt, AuthErrorResponse } from '../utils/userAuth'
 
 export default {
    Query: {
-      me:  async (parent, args, { req }, info) => {
+      me: async (parent, args, { req }, info) => {
          return await User.findById(req.session.userId)
       },
       users: async (parent, args, { req }, info) => {
@@ -36,8 +36,8 @@ export default {
       }
    },
    Mutation: {
-      signin: async (parent, { email, password }, { req }, info) => {
-         const result = await signinAttempt(email, password )
+      signin: async (parent, { email, password }, { connection }, info) => {
+         const result = await signinAttempt({ email, password, req: connection.context.req })
          return result
       },
       signup: async (parent, { input }, { req }, info) => {
@@ -63,7 +63,8 @@ export default {
             const result = await user.save()
 
             const token = jwt.sign(
-               { userId: result.id,
+               {
+                  userId: result.id,
                   email: result.email,
                   username: result.username
                },
@@ -88,7 +89,7 @@ export default {
       }
    },
    User: {
-      createdOvertimes: async (user, args, {req}, info) => {
+      createdOvertimes: async (user, args, { req }, info) => {
          return (await user.populate('createdOvertimes').execPopulate()).createdOvertimes
       }
    }

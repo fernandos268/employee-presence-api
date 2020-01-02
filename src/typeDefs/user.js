@@ -11,7 +11,7 @@ export default gql`
 
    extend type Mutation {
       signup(input: SignupInput): SignupResponse!
-      signin(email:String!,password:String!): SigninResponse!
+      signin(email:String!,password:String!): User
    }
 
    type User {
