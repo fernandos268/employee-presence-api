@@ -22,18 +22,20 @@ export default {
     },
     Mutation: {
         createMessage: async (parent, { input }, { connection }) => {
-            console.log('connection', connection)
+            console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+            console.log('createMessage', connection.context.req)
             const { text } = input
             if (!connection.context.req.session.userId) {
                 throw new Error("Signin is required");
             }
-            const message = new Message({
-                text,
-                isFavorite: false
-            })
+            return null
+            // const message = new Message({
+            //     text,
+            //     isFavorite: false
+            // })
 
-            await pubsub.publish(MESSAGE_CREATED, { message })
-            return await message.save()
+            // await pubsub.publish(MESSAGE_CREATED, { message })
+            // return await message.save()
         },
         updateMessage: async (parent, { id, text, isFavorite }) => {
             try {

@@ -1,7 +1,7 @@
 import express from 'express'
 import mongoose from 'mongoose'
 import { ApolloServer } from 'apollo-server-express'
-import redis from 'ioredis'
+import Redis from 'ioredis'
 import session from 'express-session'
 import connectRedis from 'connect-redis'
 import depthLimit from 'graphql-depth-limit'
@@ -10,26 +10,6 @@ import { createServer } from 'http'
 import typeDefs from './src/typeDefs'
 import resolvers from './src/resolvers'
 import reqAuth from './src/Middlewares/reqAuth'
-
-
-
-// import {
-//    APP_PORT,
-//    DB_USERNAME,
-//    DB_PASSWORD,
-//    DB_PORT,
-//    DB_NAME,
-//    DB_HOST,
-//    SESS_NAME,
-//    SESS_SECRET,
-//    SESS_LIFETIME,
-
-//    REDIS_HOST,
-//    REDIS_PORT,
-//    REDIS_PASSWORD,
-
-//    IN_PROD,
-// } from './config'
 
 import {
    MONGO_URI,
@@ -43,28 +23,23 @@ import {
 
    ; (async () => {
       try {
-         await mongoose.connect(
-            MONGO_URI,
-            MONGO_OPTIONS
-         )
+         await mongoose.connect(MONGO_URI, MONGO_OPTIONS)
 
          mongoose.set('useFindAndModify', false)
 
          const RedisStore = connectRedis(session)
 
-         const redisClient = new redis(REDIS_OPTIONS)
+         const redisClient = new Redis(REDIS_OPTIONS)
 
-         const sessionStore = new RedisStore({ client: redisClient })
+         const store = new RedisStore({ client: redisClient })
 
          const app = express()
 
          app.disable('x-powered-by')
 
-         // app.use(reqAuth)
-
          const sessionMiddleware = session({
             ...SESSION_OPTIONS,
-            store: sessionStore
+            store
          })
 
          app.use(sessionMiddleware)
@@ -72,7 +47,6 @@ import {
          const apolloServer = new ApolloServer({
             typeDefs,
             resolvers,
-            cors: CORS_OPTIONS,
             validationRules: [depthLimit(6)],
             playground: IN_PROD ? false : {
                subscriptionsEndpoint: `ws://localhost:${APP_PORT}/graphql`,
@@ -81,20 +55,33 @@ import {
                }
             },
             subscriptions: {
-               onConnect: (connectionParams, ws) => {
-                  return new Promise(res => sessionMiddleware(ws.upgradeReq, {}, () => {
-                     res({ req: ws.upgradeReq })
-                  }))
+               onConnect: (connectionParams, webSocket) => {
+                  return new Promise(resolve =>
+                     sessionMiddleware(webSocket.upgradeReq, {}, () => {
+                        resolve({ req: webSocket.upgradeReq })
+                     })
+                  )
                }
             },
-            context: ({ req, res, connection }) => ({ req, res, connection }),
+            context: ({ req, res, connection }) => {
+               console.log('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+               console.log('sess', connection.context.req.session)
+               console.log('headers', connection.context.req.headers)
+               return { req, res, context: connection.context }
+            },
          })
 
-         apolloServer.applyMiddleware({ app })
+         apolloServer.applyMiddleware({
+            app,
+            cors: {
+               origin: 'http://localhost:9000',
+               credentials: 'include'
+            }
+         })
 
-         const httpServer = createServer(app);
+         const httpServer = createServer(app)
 
-         apolloServer.installSubscriptionHandlers(httpServer);
+         apolloServer.installSubscriptionHandlers(httpServer)
 
          httpServer.listen({ port: APP_PORT }, () => {
             console.log(`🚀 Server ready at http:localhost:${APP_PORT}${apolloServer.graphqlPath}`);

@@ -11,9 +11,9 @@ export default {
          return await User.findById(req.session.userId)
       },
       users: async (parent, args, { req }, info) => {
-         if (!req.isAuth) {
-            return AuthErrorResponse();
-         }
+         // if (!req.isAuth) {
+         //    return AuthErrorResponse();
+         // }
 
          const Users = await User.find({})
 
@@ -36,9 +36,12 @@ export default {
       }
    },
    Mutation: {
-      signin: async (parent, { email, password }, { connection }, info) => {
-         const result = await signinAttempt({ email, password, req: connection.context.req })
-         return result
+      signin: async (parent, { email, password }, { context }, info) => {
+         console.log('#############################################################################################')
+         console.log('signin', context.req)
+         const user = await signinAttempt({ email, password })
+         context.req.session.userId = user.id
+         return user
       },
       signup: async (parent, { input }, { req }, info) => {
          try {

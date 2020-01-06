@@ -20,12 +20,12 @@ export const SESSION_OPTIONS = {
     name: SESSION_NAME,
     cookie: {
         maxAge: +SESSION_IDLE_TIMEOUT,
-        secure: IN_PROD,
-        sameSite: true
+        secure: false,
+        // sameSite: true,
+        httpOnly: false,
     },
     rolling: true,
     resave: false,
     saveUninitialized: false
-
 }
 
