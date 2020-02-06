@@ -7,6 +7,17 @@ import connectRedis from 'connect-redis'
 import depthLimit from 'graphql-depth-limit'
 import { createServer } from 'http'
 
+import cors from 'cors'
+import orientDB from 'orientjs'
+
+import socketIOStream from 'socket.io-stream'
+import kafka from 'kafka-node'
+
+import { KafkaPubSub } from 'graphql-kafka-subscriptions'
+
+import { PubSub, withFilter } from 'apollo-server'
+const apollo_pubsub = new PubSub();
+
 import typeDefs from './src/typeDefs'
 import resolvers from './src/resolvers'
 import reqAuth from './src/Middlewares/reqAuth'
@@ -18,11 +29,20 @@ import {
    SESSION_OPTIONS,
    APP_PORT,
    CORS_OPTIONS,
-   IN_PROD
+   IN_PROD,
+   ORIENT_DB_OPTIONS,
+   ORIENT_DB_SESSION,
+   KAFKA_SERVERS
 } from './config'
 
    ; (async () => {
       try {
+         const orient_client = await orientDB.OrientDBClient.connect(ORIENT_DB_OPTIONS)
+
+         let orient_pool = await orient_client.sessions(ORIENT_DB_SESSION);
+
+         let orient_db = await orient_pool.acquire()
+
          await mongoose.connect(MONGO_URI, MONGO_OPTIONS)
 
          mongoose.set('useFindAndModify', false)
@@ -44,6 +64,43 @@ import {
 
          app.use(sessionMiddleware)
 
+         app.use(cors(CORS_OPTIONS))
+
+         const kafka_topics = [
+            'new-messages',
+            'query-response',
+            'response-inbox',
+            'response-sent-items'
+         ]
+
+         const consumer_options = {
+            autoCommit: true,
+            fromOffset: 'latest',
+            // commitOffsetsOnFirstJoin: true
+         }
+
+         const consumerGroup = new kafka.ConsumerGroup(consumer_options, kafka_topics)
+
+         const client = new kafka.KafkaClient({ kafkaHost: KAFKA_SERVERS })
+         const HighLevelProducer = kafka.HighLevelProducer
+         const producer = new HighLevelProducer(client)
+         // const Producer = kafka.Producer
+         // const producer = new Producer(client)
+
+         const kafka_pubsub = new KafkaPubSub({
+            topic: 'new-messages',
+            host: KAFKA_SERVERS,
+         })
+
+         const query_pubsub = new KafkaPubSub({
+            topic: 'query-response',
+            host: KAFKA_SERVERS,
+         })
+
+         kafka_pubsub.subscribe('new-messages', data => {
+            console.log('app --> new-messages: ', data)
+         })
+
          const apolloServer = new ApolloServer({
             typeDefs,
             resolvers,
@@ -58,25 +115,22 @@ import {
                onConnect: (connectionParams, webSocket) => {
                   return new Promise(resolve =>
                      sessionMiddleware(webSocket.upgradeReq, {}, () => {
-                        resolve({ req: webSocket.upgradeReq })
+                        resolve(webSocket.upgradeReq)
                      })
                   )
                }
             },
             context: ({ req, res, connection }) => {
-               console.log('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
-               console.log('sess', connection.context.req.session)
-               console.log('headers', connection.context.req.headers)
-               return { req, res, context: connection.context }
+               // console.log('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+               // console.log('sess', connection.context.req.session)
+               // console.log('headers', connection.context.req.headers)
+               return { req, res, connection, orient_db, producer, consumerGroup, kafka_pubsub, query_pubsub, kafka, consumer_options }
             },
          })
 
          apolloServer.applyMiddleware({
             app,
-            cors: {
-               origin: 'http://localhost:9000',
-               credentials: 'include'
-            }
+            cors: false
          })
 
          const httpServer = createServer(app)

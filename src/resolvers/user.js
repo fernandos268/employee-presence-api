@@ -1,9 +1,11 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-
+import setCookieParser from 'set-cookie-parser'
+import cookieParser from 'cookie-parser'
+import { JWT_SECRET } from '../../config'
 import { User } from '../Models'
-
 import { signinAttempt, AuthErrorResponse } from '../utils/userAuth'
+
 
 export default {
    Query: {
@@ -36,12 +38,17 @@ export default {
       }
    },
    Mutation: {
-      signin: async (parent, { email, password }, { context }, info) => {
-         console.log('#############################################################################################')
-         console.log('signin', context.req)
-         const user = await signinAttempt({ email, password })
-         context.req.session.userId = user.id
-         return user
+      signin: async (parent, args, { connection, orient_db }, info) => {
+         const {
+            email,
+            password
+         } = args
+         // console.log('#############################################################################################')
+         // // console.log('signin', connection.context)
+         // const response = await signinAttempt({ email, password })
+         // // context.req.session.userId = user.id
+
+         return await signinAttempt({ email, password })
       },
       signup: async (parent, { input }, { req }, info) => {
          try {

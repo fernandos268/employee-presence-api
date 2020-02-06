@@ -2,31 +2,50 @@ import { gql } from 'apollo-server-express'
 
 export default gql`
      extend type Query {
-          allMessages: [Message]
+          GetMails(input: QueryMailsInput!):  [Message!]!
           fetchMessage(id: Int!): Message
      }
 
      extend type Mutation {
-          createMessage (input: CreateMessageInput!): Message
+          createMessage (input: CreateMessageInput!): Response
           updateMessage (
                id: ID!
                text: String!
-               isFavorite: Boolean!
+               topic: String!
           ): Message
      }
 
      extend type Subscription {
-          messageCreated: Message
-          messageUpdated(id: Int!): Message
+          messageList (email: String!): [Message!]!
+          newMessages: Message
+          messageUpdated (id: Int!): Message
      }
 
      type Message {
-          id: ID!,
-          text: String!,
-          isFavorite: Boolean!
+          id: ID
+          sender: String
+          senderId: String
+          recipient: String
+          subject: String
+          body: String
+          topic: String
+          sent_date: String
      }
 
      input CreateMessageInput {
-          text: String!
+          sender: String
+          senderId: String
+          recipient: String
+          subject: String
+          body: String
+          topic: String
+     }
+
+     input QueryMailsInput {
+          topic: String!
+          entity: String!
+          request_origin: String!
+          filter_fields:[String!]!
+          filter_values: [String!]!
      }
 `

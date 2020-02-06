@@ -13,4 +13,10 @@ export default gql`
       status: String!
       remarks: String
    }
+
+   type Response {
+      status: String
+      action: String
+      entity: String
+   }
 `

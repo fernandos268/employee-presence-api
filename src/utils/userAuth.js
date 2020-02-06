@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 
 import { User } from "../Models";
 
+import { JWT_SECRET } from '../../config'
+
 export const signinAttempt = async params => {
    const {
       email,
@@ -12,7 +14,16 @@ export const signinAttempt = async params => {
    try {
       const user = await User.findOne({ email })
       if (!user) {
-         throw new Error('User does not exist')
+         // throw new Error('User does not exist')
+         return {
+            isSuccess: false,
+            errors: [
+               {
+                  message: 'User does not exist',
+                  path: 'Signin'
+               }
+            ]
+         }
       }
 
       const isValid = await bcrypt.compare(
@@ -21,12 +32,44 @@ export const signinAttempt = async params => {
       )
 
       if (!isValid) {
-         throw new Error('Email & Password does not match')
+         // throw new Error('Email & Password does not match')
+         return {
+            isSuccess: false,
+            errors: [
+               {
+                  message: 'Email & Passsword does not match',
+                  path: 'Signin'
+               }
+            ]
+         }
       }
+      const token = jwt.sign(
+         {
+            userId: user.id
+         },
+         JWT_SECRET,
+         {
+            expiresIn: "1d"
+         }
+      )
 
-      return user
+      return {
+         isSuccess: true,
+         token,
+         user,
+         errors: []
+      }
    } catch (e) {
-      throw new Error(e);
+      // throw new Error(e);
+      return {
+         isSuccess: false,
+         errors: [
+            {
+               message: 'Server error',
+               path: 'Signin'
+            }
+         ]
+      }
    }
 }
 

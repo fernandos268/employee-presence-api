@@ -2,5 +2,5 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 export const {
-    JWT_SECRET = 'jwtsecret'
+    JWT_SECRET = 'myfreakingsecret!!!'
 } = process.env

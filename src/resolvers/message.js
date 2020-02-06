@@ -1,41 +1,128 @@
 import { Message } from "../Models"
 import { PubSub, withFilter } from 'apollo-server';
-require('dotenv').config();
-
-const MESSAGE_CREATED = 'MESSAGE_CREATED'
-const MESSAGE_UPDATED = 'MESSAGE_UPDATED'
-const FETCHED_ALL_MESSAGES = 'FETCHED_ALL_MESSAGES'
+import uuid from 'uuid/v4'
+import moment from 'moment'
 
 const pubsub = new PubSub();
 
 export default {
     Query: {
-        allMessages: async (parent, args, { req }) => {
-            console.log('QUERY: allMessages --> req', req)
-            const messages = await Message.find({})
-            await pubsub.publish(FETCHED_ALL_MESSAGES, { allMessages: messages })
-            return messages
+        GetMails: async (parent, args, { req, connection, producer, kafka, consumer_options, consumerGroup }) => {
+
+            const {
+                topic,
+                request_origin,
+                entity,
+                filter_fields,
+                filter_values
+            } = args.input
+
+            const message = {
+                topic,
+                request_origin,
+                entity,
+                filter_fields,
+                filter_values,
+            }
+
+            const kafka_message = {
+                topic,
+                timestamp: Date.now(),
+                messages: [JSON.stringify(message)]
+            }
+
+            const payloads = [kafka_message]
+
+            // const consumerGroup = new kafka.ConsumerGroup(consumer_options, ['query-response', 'response-sent-items'])
+
+            // producer.on('ready', () => {
+            //     console.log('KAFKA --> ON READY')
+            // })
+            producer.send(payloads, (error, data) => {
+                console.log("query-request -> send -> error", error)
+                console.log("query-request -> send -> data", data)
+            })
+
+            const expected_topic = topic === 'request-inbox' ?
+                'response-inbox' :
+                topic === 'request-sent-items' ?
+                    'response-sent-items' :
+                    ''
+
+            const result = await new Promise((resolve, reject) => {
+                consumerGroup.on('message', message => {
+                    const {
+                        topic: incoming_topic,
+                        value
+                    } = message
+
+                    const response_message = JSON.parse(value)
+                    const {
+                        origin: response_origin,
+                        list,
+                    } = response_message
+
+                    if (expected_topic === incoming_topic && response_origin === request_origin) {
+                        resolve(list)
+                    }
+                })
+            })
+
+            return result
         },
         fetchMessage: async (parent, { id }) => {
-            return await Message.findById(id)
+            // return await Message.findById(id)
+
         }
     },
     Mutation: {
-        createMessage: async (parent, { input }, { connection }) => {
-            console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-            console.log('createMessage', connection.context.req)
-            const { text } = input
-            if (!connection.context.req.session.userId) {
-                throw new Error("Signin is required");
+        createMessage: async (parent, { input }, { connection, producer, consumerGroup, consumer_options, kafka_pubsub }, info) => {
+            const {
+                sender,
+                senderId,
+                recipient,
+                subject,
+                body,
+                topic
+            } = input
+
+            const message = {
+                sender,
+                senderId,
+                recipient,
+                subject,
+                body,
+                sent_date: moment().format()
             }
-            return null
-            // const message = new Message({
-            //     text,
-            //     isFavorite: false
+
+            const kafka_message = {
+                topic,
+                // partition: 0,
+                timestamp: Date.now(),
+                messages: [JSON.stringify(message)]
+            }
+
+            const payloads = [kafka_message]
+
+            producer.send(payloads, (error, data) => {
+                console.log("send -> error", error)
+                console.log("send -> data", data)
+            })
+
+            // const data = await new Promise((res, rej) => {
+            //     kafka_pubsub.subscribe('new-messages', data => {
+            //         console.log('KAFKA PUBSUB SUBSCRIBE-->', data)
+            //         res(res)
+            //     })
             // })
 
-            // await pubsub.publish(MESSAGE_CREATED, { message })
-            // return await message.save()
+            // pubsub.publish('new_message_created', data)
+
+            return {
+                status: 'Requested',
+                action: 'CREATE_NODE',
+                entity: 'Message'
+            }
         },
         updateMessage: async (parent, { id, text, isFavorite }) => {
             try {
@@ -47,7 +134,7 @@ export default {
                     },
                     { new: true })
 
-                await pubsub.publish(MESSAGE_UPDATED, { message })
+                // await pubsub.publish(MESSAGE_UPDATED, { message })
 
                 return message
             } catch (error) {
@@ -56,16 +143,23 @@ export default {
         }
     },
     Subscription: {
-        messageCreated: {
-            subscribe: () => pubsub.asyncIterator([MESSAGE_CREATED]),
+        newMessages: {
+            resolve: (payload) => {
+                console.log('RESOLVER messageCreated ==> ', payload)
+                return payload
+            },
+            subscribe: (parent, args, { kafka_pubsub }) => kafka_pubsub.asyncIterator('new-messages'),
+
+            // subscribe: withFilter(() => pubsub.asyncIterator('new_message_created'), (payload, variables) => {
+            // return payload
+            // })
         },
-        messageUpdated: {
-            subscribe: withFilter(
-                () => pubsub.asyncIterator('MESSAGE_UPDATED'),
-                (payload, variables) => {
-                    return payload.messageUpdated.id === variables.id
-                },
-            ),
+        messageList: {
+            resolve: (payload, args, { connection }, info) => {
+                console.log('========================================================================================')
+                return payload
+            },
+            subscribe: (parent, args, { query_pubsub }) => pubsub.asyncIterator('any')
         },
     }
 }
