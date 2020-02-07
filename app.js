@@ -67,7 +67,7 @@ import {
          app.use(cors(CORS_OPTIONS))
 
          const kafka_topics = [
-            'new-messages',
+            'create-message-response',
             'query-response',
             'response-inbox',
             'response-sent-items'
@@ -87,8 +87,13 @@ import {
          // const Producer = kafka.Producer
          // const producer = new Producer(client)
 
-         const kafka_pubsub = new KafkaPubSub({
-            topic: 'new-messages',
+         const create_message_pubsub = new KafkaPubSub({
+            topic: 'create-message-response',
+            host: KAFKA_SERVERS,
+         })
+
+         const delete_message_pubsub = new KafkaPubSub({
+            topic: 'delete-message-response',
             host: KAFKA_SERVERS,
          })
 
@@ -97,8 +102,8 @@ import {
             host: KAFKA_SERVERS,
          })
 
-         kafka_pubsub.subscribe('new-messages', data => {
-            console.log('app --> new-messages: ', data)
+         delete_message_pubsub.subscribe('delete-message-response', data => {
+            console.log('app --> delete-message-response: ', data)
          })
 
          const apolloServer = new ApolloServer({
@@ -124,7 +129,19 @@ import {
                // console.log('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
                // console.log('sess', connection.context.req.session)
                // console.log('headers', connection.context.req.headers)
-               return { req, res, connection, orient_db, producer, consumerGroup, kafka_pubsub, query_pubsub, kafka, consumer_options }
+               return {
+                  req,
+                  res,
+                  connection,
+                  orient_db,
+                  producer,
+                  consumerGroup,
+                  create_message_pubsub,
+                  delete_message_pubsub,
+                  query_pubsub,
+                  kafka,
+                  consumer_options
+               }
             },
          })
 

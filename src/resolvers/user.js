@@ -82,7 +82,7 @@ export default {
                {
                   expiresIn: "1h"
                }
-            );
+            )
 
             return {
                token,

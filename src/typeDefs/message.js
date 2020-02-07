@@ -7,17 +7,19 @@ export default gql`
      }
 
      extend type Mutation {
-          createMessage (input: CreateMessageInput!): Response
-          updateMessage (
+          createMessage(input: CreateMessageInput!): Response
+          updateMessage(
                id: ID!
                text: String!
                topic: String!
           ): Message
+          deleteMessage(id: String!): Response
      }
 
      extend type Subscription {
           messageList (email: String!): [Message!]!
           newMessages: Message
+          deletedMessage: Message
           messageUpdated (id: Int!): Message
      }
 

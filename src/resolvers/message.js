@@ -76,7 +76,7 @@ export default {
         }
     },
     Mutation: {
-        createMessage: async (parent, { input }, { connection, producer, consumerGroup, consumer_options, kafka_pubsub }, info) => {
+        createMessage: async (parent, { input }, { connection, producer, consumerGroup, consumer_options, create_message_pubsub }, info) => {
             const {
                 sender,
                 senderId,
@@ -96,7 +96,7 @@ export default {
             }
 
             const kafka_message = {
-                topic,
+                topic: 'create-messsage-request',
                 // partition: 0,
                 timestamp: Date.now(),
                 messages: [JSON.stringify(message)]
@@ -110,7 +110,7 @@ export default {
             })
 
             // const data = await new Promise((res, rej) => {
-            //     kafka_pubsub.subscribe('new-messages', data => {
+            //     create_message_pubsub.subscribe('create-message-response', data => {
             //         console.log('KAFKA PUBSUB SUBSCRIBE-->', data)
             //         res(res)
             //     })
@@ -119,7 +119,7 @@ export default {
             // pubsub.publish('new_message_created', data)
 
             return {
-                status: 'Requested',
+                status: 'Create Requested',
                 action: 'CREATE_NODE',
                 entity: 'Message'
             }
@@ -140,6 +140,30 @@ export default {
             } catch (error) {
                 throw console.error();
             }
+        },
+        deleteMessage: (parent, { id }, { producer }) => {
+            const message = {
+                id
+            }
+
+            const kafka_message = {
+                topic: 'delete-message-request',
+                timestamp: Date.now(),
+                messages: [JSON.stringify(message)]
+            }
+
+            const payloads = [kafka_message]
+
+            producer.send(payloads, (error, data) => {
+                console.log("send -> error", error)
+                console.log("send -> data", data)
+            })
+
+            return {
+                status: 'Delete Requested',
+                action: 'DELETE_NODE',
+                entity: 'Message'
+            }
         }
     },
     Subscription: {
@@ -148,11 +172,14 @@ export default {
                 console.log('RESOLVER messageCreated ==> ', payload)
                 return payload
             },
-            subscribe: (parent, args, { kafka_pubsub }) => kafka_pubsub.asyncIterator('new-messages'),
-
-            // subscribe: withFilter(() => pubsub.asyncIterator('new_message_created'), (payload, variables) => {
-            // return payload
-            // })
+            subscribe: (parent, args, { create_message_pubsub }) => create_message_pubsub.asyncIterator('create-message-response'),
+        },
+        deletedMessage: {
+            resolve: (payload) => {
+                console.log('RESOLVER deletedMessage ==> ', payload)
+                return payload
+            },
+            subscribe: (parent, args, { delete_message_pubsub }) => delete_message_pubsub.asyncIterator('delete-message-response'),
         },
         messageList: {
             resolve: (payload, args, { connection }, info) => {
