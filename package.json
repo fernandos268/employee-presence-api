@@ -7,7 +7,7 @@
     "dev": "nodemon  -r esm app.js"
   },
   "dependencies": {
-    "apollo-server-express": "^2.6.9",
+    "apollo-server-express": "^2.14.2",
     "bcryptjs": "^2.4.3",
     "connect-redis": "^3.4.2",
     "cors": "^2.8.5",
